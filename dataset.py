@@ -12,7 +12,9 @@ class Datasets(Dataset):
         self.path = path
         # 语义分割需要的图片的图片和标签
         self.name1 = os.listdir(os.path.join(path, "images"))
-        self.name2 = os.listdir(os.path.join(path, "1st_manual"))
+        self.name2 = os.listdir(os.path.join(path, "labels"))
+        self.name1.sort()
+        self.name2.sort()
         self.trans = torchvision.transforms.Compose([torchvision.transforms.ToTensor()])
 
     def __len__(self):
@@ -45,7 +47,7 @@ class Datasets(Dataset):
         name1 = self.name1[index]
         name2 = self.name2[index]
         # 图片和标签的路径
-        img_path = [os.path.join(self.path, i) for i in ("images", "1st_manual")]
+        img_path = [os.path.join(self.path, i) for i in ("images", "labels")]
         # 读取原始图片和标签，并转RGB
         img_o = cv2.imread(os.path.join(img_path[0], name1))
         _, img_l = cv2.VideoCapture(os.path.join(img_path[1], name2)).read()
@@ -53,20 +55,22 @@ class Datasets(Dataset):
         img_l = cv2.cvtColor(img_l, cv2.COLOR_BGR2RGB)
 
         # 转成网络需要的正方形
-        img_o = self.__trans__(img_o, 256)
-        img_l = self.__trans__(img_l, 256)
+        img_o = self.__trans__(img_o, 512)
+        img_l = self.__trans__(img_l, 512)
 
         return self.trans(img_o), self.trans(img_l)
 
 if __name__ == '__main__':
     i = 1
-    dataset = Datasets(r"D:\DRIVE\training")
+    dataset = Datasets(r"head")
+    if (os.path.exists("./img") == False):
+        os.mkdir("./img")
     for a, b in dataset:
         print(i)
         # print(a.shape)
         # print(b.shape)
-        save_image(a, f"./img/{i}.jpg", nrow=1)
-        save_image(b, f"./img/{i}.png", nrow=1)
+        save_image(a, f"./img/{i}.png", nrow=1)
+        save_image(b, f"./img/{i}_mask.png", nrow=1)
         i += 1
         if i > 5:
             break
