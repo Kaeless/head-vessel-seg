@@ -30,7 +30,7 @@ class Trainer:
         # 可以使用其他损失，比如DiceLoss、FocalLoss之类的
         self.loss_func = nn.BCELoss()
         # 设备好，batch_size和num_workers可以给大点
-        self.loader = DataLoader(dataset.Datasets(path), batch_size=4, shuffle=True, num_workers=4)
+        self.loader = DataLoader(dataset.Datasets(path), batch_size=1, shuffle=True, num_workers=0)
 
         # 判断是否存在模型
         if os.path.exists(self.model):
@@ -81,5 +81,5 @@ class Trainer:
 
 if __name__ == '__main__':
     # 路径改一下
-    t = Trainer(r"DRIVE\training", r'./model.plt', r'./model_{}_{}.plt', img_save_path=r'./train_img')
+    t = Trainer(r"head", r'./model.plt', r'./model_{}_{}.plt', img_save_path=r'./train_img')
     t.train(300)

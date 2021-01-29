@@ -22,7 +22,7 @@ class Conv(nn.Module):
             nn.Conv2d(C_out, C_out, 3, 1, 1),
             nn.BatchNorm2d(C_out),
             # 防止过拟合
-            nn.Dropout(0.4),
+            nn.Dropout(0.3),
             nn.LeakyReLU(),
         )
 
@@ -76,16 +76,21 @@ class UNet(nn.Module):
         self.C4 = Conv(256, 512)
         self.D4 = DownSampling(512)
         self.C5 = Conv(512, 1024)
+        # 增加一层下采样
+        self.D5 = DownSampling(1024)
+        self.C6 = Conv(1024, 2048)
 
         # 4次上采样
-        self.U1 = UpSampling(1024)
-        self.C6 = Conv(1024, 512)
-        self.U2 = UpSampling(512)
-        self.C7 = Conv(512, 256)
-        self.U3 = UpSampling(256)
-        self.C8 = Conv(256, 128)
-        self.U4 = UpSampling(128)
-        self.C9 = Conv(128, 64)
+        self.U1 = UpSampling(2048)
+        self.C7 = Conv(2048, 1024)
+        self.U2 = UpSampling(1024)
+        self.C8 = Conv(1024, 512)
+        self.U3 = UpSampling(512)
+        self.C9 = Conv(512, 256)
+        self.U4 = UpSampling(256)
+        self.C10 = Conv(256, 128)
+        self.U5 = UpSampling(128)
+        self.C11 = Conv(128, 64)
 
         self.Th = torch.nn.Sigmoid()
         self.pred = torch.nn.Conv2d(64, 3, 3, 1, 1)
@@ -96,21 +101,23 @@ class UNet(nn.Module):
         R2 = self.C2(self.D1(R1))
         R3 = self.C3(self.D2(R2))
         R4 = self.C4(self.D3(R3))
-        Y1 = self.C5(self.D4(R4))
+        R5 = self.C5(self.D4(R4))
+        Y1 = self.C6(self.D5(R5))
 
         # 上采样部分
         # 上采样的时候需要拼接起来
-        O1 = self.C6(self.U1(Y1, R4))
-        O2 = self.C7(self.U2(O1, R3))
-        O3 = self.C8(self.U3(O2, R2))
-        O4 = self.C9(self.U4(O3, R1))
+        O1 = self.C7(self.U1(Y1, R5))
+        O2 = self.C8(self.U2(O1, R4))
+        O3 = self.C9(self.U3(O2, R3))
+        O4 = self.C10(self.U4(O3, R2))
+        O5 = self.C11(self.U5(O4, R1))
 
         # 输出预测，这里大小跟输入是一致的
         # 可以把下采样时的中间抠出来再进行拼接，这样修改后输出就会更小
-        return self.Th(self.pred(O4))
+        return self.Th(self.pred(O5))
 
 
 if __name__ == '__main__':
-    a = torch.randn(2, 3, 256, 256)
+    a = torch.randn(2, 3, 512, 512)
     net = UNet()
     print(net(a).shape)
